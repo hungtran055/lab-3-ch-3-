@@ -1,0 +1,23 @@
+{
+  "version": 1, "author": "Lab3", "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-gas-sensor", "id": "mq2", "top": -120, "left": -200, "attrs": {} },
+    { "type": "wokwi-ntc-temperature-sensor", "id": "ntc", "top": 40, "left": -200, "attrs": {} },
+    { "type": "wokwi-led", "id": "ledFan", "top": -100, "left": 220, "attrs": { "color": "green" } },
+    { "type": "wokwi-led", "id": "ledPump", "top": -40, "left": 220, "attrs": { "color": "blue" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": -60, "left": 160, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 0, "left": 160, "attrs": { "value": "220" } }
+  ],
+  "connections": [
+    ["mq2:AOUT", "esp:34", "green", []],
+    ["mq2:VCC", "esp:3V3", "red", []],
+    ["mq2:GND", "esp:GND.1", "black", []],
+    ["ntc:OUT", "esp:35", "green", []],
+    ["ntc:VCC", "esp:3V3", "red", []],
+    ["ntc:GND", "esp:GND.1", "black", []],
+    ["esp:26", "r1:1", "green", []], ["r1:2", "ledFan:A", "green", []],
+    ["esp:27", "r2:1", "blue", []],  ["r2:2", "ledPump:A", "blue", []],
+    ["ledFan:C", "esp:GND.1", "black", []], ["ledPump:C", "esp:GND.1", "black", []]
+  ]
+}

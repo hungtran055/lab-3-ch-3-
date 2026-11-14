@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mạch báo cháy ESP32</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f3f5f4;--fg:#1c2421;--card:#fff;--ok:#2f7d5b;--bad:#c8372d;--line:#d9dfdc}
+@media(prefers-color-scheme:dark){:root{--bg:#141a18;--fg:#e8eeeb;--card:#1e2623;--line:#33403b}}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+main{max-width:900px;margin:auto;padding:20px}
+h1{font-size:1.5rem}#st{font-size:.9rem;opacity:.8}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.val{font-size:2.6rem;font-weight:700}.val.alert{color:var(--bad)}
+button{width:100%;padding:12px;font-size:1rem;border:0;border-radius:8px;background:var(--line);color:var(--fg);cursor:pointer}
+button.on{background:var(--ok);color:#fff}
+</style></head><body><main>
+<h1>Mạch báo cháy gia đình</h1><div id="st">Đang kết nối broker…</div>
+<div class="grid">
+ <div class="card"><div>Nồng độ khí gas (ADC)</div><div class="val" id="gas">--</div></div>
+ <div class="card"><div>Nhiệt độ (°C)</div><div class="val" id="temp">--</div></div>
+</div>
+<div class="grid">
+ <div class="card"><canvas id="cg"></canvas></div>
+ <div class="card"><canvas id="ct"></canvas></div>
+</div>
+<div class="grid">
+ <div class="card"><button id="bfan">Quạt: TẮT</button></div>
+ <div class="card"><button id="bpump">Máy bơm: TẮT</button></div>
+</div></main>
+<script>
+const GAS_TH=2000, TEMP_TH=50;
+const T={data:'lab3/firealarm/data',fan:'lab3/firealarm/cmd/fan',pump:'lab3/firealarm/cmd/pump'};
+const c=mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+c.on('connect',()=>{document.getElementById('st').textContent='Đã kết nối broker';c.subscribe(T.data)});
+c.on('close',()=>document.getElementById('st').textContent='Mất kết nối');
+function mk(id,label,color){return new Chart(document.getElementById(id),{type:'line',
+ data:{labels:[],datasets:[{label,data:[],borderColor:color,tension:.3}]},options:{animation:false}})}
+const cg=mk('cg','Gas','#c8372d'), ct=mk('ct','Nhiệt độ','#d98a1f');
+function push(ch,v){const t=new Date().toLocaleTimeString();ch.data.labels.push(t);
+ ch.data.datasets[0].data.push(v);if(ch.data.labels.length>30){ch.data.labels.shift();ch.data.datasets[0].data.shift()}ch.update()}
+c.on('message',(t,m)=>{const d=JSON.parse(m.toString());
+ const g=document.getElementById('gas'),k=document.getElementById('temp');
+ g.textContent=d.gas;k.textContent=d.temp;
+ g.classList.toggle('alert',d.gas>GAS_TH);k.classList.toggle('alert',d.temp>TEMP_TH);
+ push(cg,d.gas);push(ct,d.temp)});
+function tog(btn,topic,name){let on=false;btn.onclick=()=>{on=!on;
+ c.publish(topic,on?'ON':'OFF');btn.textContent=name+': '+(on?'BẬT':'TẮT');btn.classList.toggle('on',on)}}
+tog(document.getElementById('bfan'),T.fan,'Quạt');tog(document.getElementById('bpump'),T.pump,'Máy bơm');
+</script></body></html>
